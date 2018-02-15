@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct muchlong
 {
@@ -8,7 +9,7 @@ typedef struct muchlong
 	unsigned char isNegativeBool;
 } verylong;
 
-int freeStruct(verylong *a)
+void freeStruct(verylong *a)
 {
 	if (a!=NULL)
 	{
@@ -16,23 +17,10 @@ int freeStruct(verylong *a)
 		{
 			free(a->num);
 		}
+		a->len = 0;
+		a->isNegativeBool = 0;
 	}
-	
-	return 0;
 }
-
-int print_bcdh(verylong a)
-{	
-	int i=0;
-	if(a.isNegativeBool)
-		printf("-");
-	for(i=0;i<a.len;i++)
-		printf("%x", a.num[i]);
-	printf("\n");
-	
-	return 0;
-}
-
 int readToStruct(FILE *input, verylong *a)
 {
 	unsigned long long i;
@@ -78,6 +66,155 @@ int readToStruct(FILE *input, verylong *a)
 	}
 	a->len=i;
 	return 0;
+}
+
+int longIsEqual(verylong a, verylong b)
+{
+	if (!(a.len || b.len))
+	{
+		return 1;
+	}
+	if (a.num==NULL || b.num==NULL)
+	{
+		return 0;
+	}
+	if (a.len==b.len && a.isNegativeBool==b.isNegativeBool)
+	{
+		int i;
+		for (i=0; i<a.len; ++i)
+		{
+			if (a.num[i]!=b.num[i])
+			{
+				return 0;
+			}
+		}
+		return 1;
+	}
+	return 0;
+}
+int longIsGreater(verylong a, verylong b)
+{
+	if (!(a.len || b.len))
+	{
+		return 0;
+	}
+	if (a.num==NULL || b.num==NULL)
+	{
+		return 0;
+	}
+	if (a.isNegativeBool && b.isNegativeBool)	//neig neig
+	{
+		if (a.len<b.len)
+		{
+			return 1;
+		}
+		if (a.len>b.len)
+		{
+			return 0;
+		}
+		if (a.len==b.len)
+		{
+			int i;
+			for (i=0; i<a.len; ++i)
+			{
+				if (a.num[i]<b.num[i])
+				{
+					return 1;
+				}
+			}
+			return 0;
+		}
+	}
+	if (!a.isNegativeBool && !b.isNegativeBool)	//teig teig
+	{
+		if (a.len>b.len)
+		{
+			return 1;
+		}
+		if (a.len<b.len)
+		{
+			return 0;
+		}
+		if (a.len==b.len)
+		{
+			int i;
+			for (i=0; i<a.len; ++i)
+			{
+				if (a.num[i]>b.num[i])
+				{
+					return 1;
+				}
+			}
+			return 0;
+		}
+	}
+	if (!a.isNegativeBool && b.isNegativeBool)	//teig neig
+	{
+		return 1;
+	}
+	return 0;	//neig teig
+}
+int longIsLess(verylong a, verylong b)
+{
+	if (!(a.len || b.len))
+	{
+		return 0;
+	}
+	if (a.num==NULL || b.num==NULL)
+	{
+		return 0;
+	}
+	if (a.isNegativeBool && b.isNegativeBool)	//neig neig
+	{
+		if (a.len>b.len)
+		{
+			return 1;
+		}
+		if (a.len<b.len)
+		{
+			return 0;
+		}
+		if (a.len==b.len)
+		{
+			int i;
+			for (i=0; i<a.len; ++i)
+			{
+				if (a.num[i]>b.num[i])
+				{
+					return 1;
+				}
+			}
+			return 0;
+		}
+	}
+	if (!a.isNegativeBool && !b.isNegativeBool)	//teig teig
+	{
+		if (a.len<b.len)
+		{
+			return 1;
+		}
+		if (a.len>b.len)
+		{
+			return 0;
+		}
+		if (a.len==b.len)
+		{
+			int i;
+			for (i=0; i<a.len; ++i)
+			{
+				if (a.num[i]<b.num[i])
+				{
+					return 1;
+				}
+			}
+			return 0;
+		}
+	}
+	if (!a.isNegativeBool && b.isNegativeBool)	//teig neig
+	{
+		return 0;
+	}
+	return 1;	//neig teig
 }
 
 int longSum(verylong a, verylong b, verylong *sum)
@@ -196,10 +333,9 @@ int longSum(verylong a, verylong b, verylong *sum)
 	
 	return 0;
 }
-
 int longMul(verylong a, verylong b, verylong *rez)
 {
-	int i, j, shift_count = 0;	
+	int i, j, shift_count = 0;
 	
 	rez->len = (a.len && b.len)? a.len + b.len : 0;
 	rez->num = calloc(rez->len, 1);
@@ -244,5 +380,58 @@ int longMul(verylong a, verylong b, verylong *rez)
 	{
 		return 3;
 	}
+	return 0;
+}
+int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
+{
+	if (b.len==0)
+	{
+		return 1;
+	}
+	
+	quot->isNegativeBool = (a.isNegativeBool || b.isNegativeBool) && !(a.isNegativeBool && b.isNegativeBool) ? 1 : 0;
+	rem->isNegativeBool = a.isNegativeBool;
+	
+	if (a.len<b.len)
+	{
+		quot->len = 0;
+		quot->num = NULL;
+		
+		rem->len = a.len;
+		rem->num = malloc(a.len);
+		memcpy(rem->num, a.num, a.len);
+		
+		return 0;
+	}
+	
+	quot->len = a.len-b.len+1;
+	quot->num = calloc(quot->len, 1);
+	
+	rem->len = 0;
+	rem->num = NULL;
+	
+	
+	
+	return 0;
+}
+int longExp(verylong a, verylong b, verylong *exp)
+{
+	exp->isNegativeBool = 0;
+	exp->len = 0;
+	exp->num = NULL;
+	printf("Nothing here yet!");
+	
+	return 0;
+}
+
+int print_bcdh(verylong a)
+{	
+	int i=0;
+	if(a.isNegativeBool)
+		printf("-");
+	for(i=0;i<a.len;i++)
+		printf("%x", a.num[i]);
+	printf("\n");
+	
 	return 0;
 }

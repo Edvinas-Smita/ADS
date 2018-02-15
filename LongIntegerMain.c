@@ -4,14 +4,14 @@
 int main()
 {
 	char ch;
-	verylong a, b, sum, mul;
+	verylong a, b, sum, mul, quot, rem, exp;
 	printf("Enter two integers:\n");
 	readToStruct(stdin, &a);
 	readToStruct(stdin, &b);
 	
 	while(1)
 	{
-		printf("Enter an operation to do (+, *), 0 to exit or R to reenter the integers:\n");
+		printf("Arithmetic:\n\t'+' Sum,\n\t'*' Multiplication,\n\t'/' Division with remainder,\n\t'^' Exponentiation;\nOther:\n\t'=' Signed compare,\n\t'a' / 'b' Print entered values,\n\t'R' Reenter integers,\n\t'0' Exit;\n");
 		ch = getc(stdin);
 		if (ch!=0xA && ch!=0xD && ch!=0xFF)
 		{
@@ -25,61 +25,104 @@ int main()
 				printf("Sum: ");
 				if (longSum(a, b, &sum))
 				{
-					printf("Something went wrong!\n");
+					printf("Something went wrong while calculating! Terminating...\n");
 					return 1;
 				}
 				if (print_bcdh(sum))
 				{
-					printf("Something went wrong!\n");
+					printf("Something went wrong with printing the value! Terminating...\n");
 					return 1;
 				}
-				if (freeStruct(&sum))
-				{
-					printf("Something went wrong!\n");
-					return 1;
-				}
+				freeStruct(&sum);
 				break;
 			}
 			case '*':
 			{
 				printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-				printf("Mul: ");
+				printf("Product: ");
 				if (longMul(a, b, &mul))
 				{
-					printf("Something went wrong!\n");
+					printf("Something went wrong while calculating! Terminating...\n");
 					return 1;
 				}
 				if (print_bcdh(mul))
 				{
-					printf("Something went wrong!\n");
+					printf("Something went wrong with printing the value! Terminating...\n");
 					return 1;
 				}
-				if (freeStruct(&mul))
+				freeStruct(&mul);
+				break;
+			}
+			case '/':
+			{
+				printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+				if (longDiv(a, b, &quot, &rem))
 				{
-					printf("Something went wrong!\n");
+					printf("Something went wrong while calculating! Terminating...\n");
 					return 1;
+				}
+				
+				printf("Quotient: ");
+				if (print_bcdh(quot))
+				{
+					printf("Something went wrong with printing the value! Terminating...\n");
+					return 1;
+				}
+				printf("Remainder: ");
+				if (print_bcdh(rem))
+				{
+					printf("Something went wrong with printing the value! Terminating...\n");
+					return 1;
+				}
+				
+				freeStruct(&quot);
+				freeStruct(&rem);
+				break;
+			}
+			case '^':
+			{
+				printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+				printf("Result: ");
+				if (longExp(a, b, &exp))
+				{
+					printf("Something went wrong while calculating! Terminating...\n");
+					return 1;
+				}
+				if (print_bcdh(exp))
+				{
+					printf("Something went wrong with printing the value! Terminating...\n");
+					return 1;
+				}
+				freeStruct(&exp);
+				break;
+			}
+			
+			case '=':
+			{
+				if (longIsEqual(a, b))
+				{
+					printf("a == b\n");
+				}
+				else if (longIsGreater(a, b))
+				{
+					printf("a > b\n");
+				}
+				else if (longIsLess(a, b))
+				{
+					printf("a < b\n");
 				}
 				break;
 			}
-			case '0':
-			{
-				return 0;
-			}
+			
 			case 'R':
 			{
-				if (freeStruct(&a))
-				{
-					printf("Something went wrong!\n");
-					return 1;
-				}
-				if (freeStruct(&b))
-				{
-					printf("Something went wrong!\n");
-					return 1;
-				}
+				freeStruct(&a);
+				freeStruct(&b);
 				readToStruct(stdin, &a);
 				readToStruct(stdin, &b);
+				break;
 			}
+			
 			case 'a':
 			{
 				print_bcdh(a);
@@ -90,10 +133,14 @@ int main()
 				print_bcdh(b);
 				break;
 			}
-		
+			
+			case '0':
+			{
+				return 0;
+			}
 			default:
 			{
-				printf("Unrecognised choise!\n");
+				printf("Unrecognised choise! Terminating...\n");
 				break;
 			}
 		}
