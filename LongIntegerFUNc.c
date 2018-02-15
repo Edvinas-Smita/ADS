@@ -8,7 +8,21 @@ typedef struct muchlong
 	unsigned long long len;
 	unsigned char isNegativeBool;
 } verylong;
+//{ func declarations
+void freeStruct(verylong *a);
+int readToStruct(FILE *input, verylong *a);
+int longIsEqual(verylong a, verylong b);
+int longIsGreater(verylong a, verylong b);
+int longIsLess(verylong a, verylong b);
+int longSum(verylong a, verylong b, verylong *sum);
+int longMul(verylong a, verylong b, verylong *mul);
+int longDiv(verylong a, verylong b, verylong *quot, verylong *div);
+int longExp(verylong a, verylong b, verylong *exp);
+int removeLeadingZeros(verylong *a);
+int print_bcdh(verylong a);
+//}
 
+//{ free & read
 void freeStruct(verylong *a)
 {
 	if (a!=NULL)
@@ -49,10 +63,6 @@ int readToStruct(FILE *input, verylong *a)
 				a->isNegativeBool=a->num[0]=='-'?a->isNegativeBool?0:1:0;
 				i=-1;
 			}
-			else if(a->num[0]=='0')
-			{
-				i=-1;
-			}
 		}
 		else if(!(a->num[i]>='0' && a->num[i]<='9'))
 		{
@@ -65,9 +75,15 @@ int readToStruct(FILE *input, verylong *a)
 			a->num[i]-=0x30;
 	}
 	a->len=i;
+	if (removeLeadingZeros(a))
+	{
+		return 1;
+	}
 	return 0;
 }
+//}
 
+//{ comparison
 int longIsEqual(verylong a, verylong b)
 {
 	if (!(a.len || b.len))
@@ -80,7 +96,7 @@ int longIsEqual(verylong a, verylong b)
 	}
 	if (a.len==b.len && a.isNegativeBool==b.isNegativeBool)
 	{
-		int i;
+		long long i;
 		for (i=0; i<a.len; ++i)
 		{
 			if (a.num[i]!=b.num[i])
@@ -114,7 +130,7 @@ int longIsGreater(verylong a, verylong b)
 		}
 		if (a.len==b.len)
 		{
-			int i;
+			long long i;
 			for (i=0; i<a.len; ++i)
 			{
 				if (a.num[i]<b.num[i])
@@ -137,12 +153,16 @@ int longIsGreater(verylong a, verylong b)
 		}
 		if (a.len==b.len)
 		{
-			int i;
+			long long i;
 			for (i=0; i<a.len; ++i)
 			{
 				if (a.num[i]>b.num[i])
 				{
 					return 1;
+				}
+				else if (a.num[i]<b.num[i])
+				{
+					return 0;
 				}
 			}
 			return 0;
@@ -176,10 +196,14 @@ int longIsLess(verylong a, verylong b)
 		}
 		if (a.len==b.len)
 		{
-			int i;
+			long long i;
 			for (i=0; i<a.len; ++i)
 			{
 				if (a.num[i]>b.num[i])
+				{
+					return 0;
+				}
+				else if (a.num[i]<b.num[i])
 				{
 					return 1;
 				}
@@ -199,10 +223,14 @@ int longIsLess(verylong a, verylong b)
 		}
 		if (a.len==b.len)
 		{
-			int i;
+			long long i;
 			for (i=0; i<a.len; ++i)
 			{
-				if (a.num[i]<b.num[i])
+				if (a.num[i]>b.num[i])
+				{
+					return 0;
+				}
+				else if (a.num[i]<b.num[i])
 				{
 					return 1;
 				}
@@ -216,7 +244,9 @@ int longIsLess(verylong a, verylong b)
 	}
 	return 1;	//neig teig
 }
+//}
 
+//{ aritmetic
 int longSum(verylong a, verylong b, verylong *sum)
 {
 	unsigned long long i, carry = 0;
@@ -313,30 +343,21 @@ int longSum(verylong a, verylong b, verylong *sum)
 		sum->isNegativeBool=1;
 	}
 	
-	for(i=0; i<sum->len; i++)
-		if(sum->num[i]!=0)
-		{
-			carry = i;
-			break;
-		}
-	if(carry)
+	if (removeLeadingZeros(sum))
 	{
-		for(i=0; i<sum->len-carry; i++)
-			sum->num[i] = sum->num[carry+i];
-		sum->len -= carry;
-		sum->num = realloc(sum->num, sum->len);
-		if (sum->num==NULL)
-		{
-			return 3;
-		}
+		return 1;
 	}
 	
 	return 0;
 }
 int longMul(verylong a, verylong b, verylong *rez)
 {
-	int i, j, shift_count = 0;
-	
+	if (a.len==0 || b.len==0)
+	{
+		rez->len = 0;
+		rez->num = NULL;
+		rez->isNegativeBool = 0;
+	}
 	rez->len = (a.len && b.len)? a.len + b.len : 0;
 	rez->num = calloc(rez->len, 1);
 	if (rez->num==NULL)
@@ -350,6 +371,7 @@ int longMul(verylong a, verylong b, verylong *rez)
 		rez->isNegativeBool = 1;
 	}
 	
+	long long i, j, shift_count = 0;
 	for (i = b.len-1; i>=0; i--)
 	{
 		for (j = rez->len-1; j>=0; j--)
@@ -362,24 +384,11 @@ int longMul(verylong a, verylong b, verylong *rez)
 		shift_count++;
 	}
 	
-	long long start = 0;
-	j = 0;
-	for (i = 0; i<rez->len; i++)
-		if (rez->num[i]>=1 && a.num[i]<=9)
-		{
-			start = i;
-			j = 1;
-			break;
-		}
-	if (start)
-		for(i = 0; i<=rez->len-start; i++)
-			rez->num[i] = rez->num[i+start];
-	rez->len = j? rez->len-start : 0;
-	rez->num = realloc(rez->num, rez->len);
-	if (rez->num==NULL)
+	if (removeLeadingZeros(rez))
 	{
 		return 3;
 	}
+	
 	return 0;
 }
 int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
@@ -389,28 +398,93 @@ int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
 		return 1;
 	}
 	
-	quot->isNegativeBool = (a.isNegativeBool || b.isNegativeBool) && !(a.isNegativeBool && b.isNegativeBool) ? 1 : 0;
-	rem->isNegativeBool = a.isNegativeBool;
-	
 	if (a.len<b.len)
 	{
 		quot->len = 0;
 		quot->num = NULL;
+		quot->isNegativeBool = 0;
 		
 		rem->len = a.len;
+		rem->isNegativeBool = a.isNegativeBool;
 		rem->num = malloc(a.len);
 		memcpy(rem->num, a.num, a.len);
 		
 		return 0;
 	}
 	
+	quot->isNegativeBool = 0;
 	quot->len = a.len-b.len+1;
 	quot->num = calloc(quot->len, 1);
 	
 	rem->len = 0;
 	rem->num = NULL;
 	
+	long long i;
+	verylong compare;
+	char doDouble, aNeg = a.isNegativeBool, bNeg = b.isNegativeBool;
+	a.isNegativeBool = b.isNegativeBool = 0;
+	for (i = 0; i<quot->len; i++)
+	{
+		quot->num[i] = 5;
+		doDouble = 1;
+		if (longMul(b, *quot, &compare))
+		{
+			return 1;
+		}
+		while (1)
+		{
+			if (longIsEqual(a, compare))
+			{
+				return 0;
+			}
+			else if (longIsLess(compare, a))	//reikia didinti
+			{
+				freeStruct(&compare);
+				if (quot->num[i]==1 || quot->num[i]==2 || quot->num[i]==4 || quot->num[i]==6 || quot->num[i]==9)
+				{
+					break;
+				}
+				quot->num[i] += doDouble ? 2 : 1;
+				doDouble = 0;
+				if (longMul(b, *quot, &compare))
+				{
+					return 1;
+				}
+			}
+			else if (longIsGreater(compare, a))		//reikia mazinti
+			{
+				freeStruct(&compare);
+				if (quot->num[i]==1 || quot->num[i]==4 || quot->num[i]==6 || quot->num[i]==8 || quot->num[i]==9)
+				{
+					--quot->num[i];
+					break;
+				}
+				quot->num[i] -= doDouble ? 2 : 1;
+				doDouble = 0;
+				if (longMul(b, *quot, &compare))
+				{
+					return 1;
+				}
+			}
+		}
+	}
 	
+	a.isNegativeBool = aNeg;
+	b.isNegativeBool = bNeg;
+	quot->isNegativeBool = (a.isNegativeBool || b.isNegativeBool) && !(a.isNegativeBool && b.isNegativeBool) ? 1 : 0;
+	if (removeLeadingZeros(quot))
+	{
+		return 1;
+	}
+	if (longMul(b, *quot, &compare))
+	{
+		return 1;
+	}
+	compare.isNegativeBool = compare.isNegativeBool ? 0 : 1;
+	if (longSum(a, compare, rem))
+	{
+		return 1;
+	}
 	
 	return 0;
 }
@@ -423,10 +497,40 @@ int longExp(verylong a, verylong b, verylong *exp)
 	
 	return 0;
 }
+//}
 
+//{ other
+int removeLeadingZeros(verylong *a)
+{
+	long long i, start = 0;
+	char notZeroLen = 0;
+	for (i = 0; i<a->len; i++)
+	{
+		if (a->num[i]>=1 && a->num[i]<=9)
+		{
+			start = i;
+			notZeroLen = 1;
+			break;
+		}
+	}
+	if (start)
+	{
+		for(i = 0; i<=a->len-start; i++)
+		{
+			a->num[i] = a->num[i+start];
+		}
+	}
+	a->len = notZeroLen ? a->len-start : 0;
+	a->num = realloc(a->num, a->len);
+	if (a->num==NULL && a->len!=0)
+	{
+		return 1;
+	}
+	return 0;
+}
 int print_bcdh(verylong a)
 {	
-	int i=0;
+	long long i;
 	if(a.isNegativeBool)
 		printf("-");
 	for(i=0;i<a.len;i++)
@@ -435,3 +539,5 @@ int print_bcdh(verylong a)
 	
 	return 0;
 }
+//}
+

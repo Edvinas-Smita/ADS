@@ -103,11 +103,11 @@ int main()
 				{
 					printf("a == b\n");
 				}
-				else if (longIsGreater(a, b))
+				if (longIsGreater(a, b))
 				{
 					printf("a > b\n");
 				}
-				else if (longIsLess(a, b))
+				if (longIsLess(a, b))
 				{
 					printf("a < b\n");
 				}

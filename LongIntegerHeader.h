@@ -5,7 +5,7 @@ typedef struct muchlong
 	unsigned char isNegativeBool;
 } verylong;
 
-int freeStruct(verylong *a);
+void freeStruct(verylong *a);
 int readToStruct(FILE *input, verylong *a);
 
 int longIsEqual(verylong a, verylong b);
