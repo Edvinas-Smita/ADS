@@ -45,11 +45,29 @@ int main()
 					printf("Something went wrong while calculating! Terminating...\n");
 					return 1;
 				}
+				
 				if (print_bcdh(mul))
 				{
 					printf("Something went wrong with printing the value! Terminating...\n");
 					return 1;
 				}
+				
+				printf("Product_karatsuba: ");
+				if (longMul_karatsuba(a, b, &mul))
+				{
+					printf("Something went wrong while calculating! Terminating...\n");
+					return 1;
+				}
+				
+				
+				if (print_bcdh(mul))
+				{
+					printf("Something went wrong with printing the value! Terminating...\n");
+					return 1;
+				}
+
+
+				
 				freeStruct(&mul);
 				break;
 			}

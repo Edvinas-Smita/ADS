@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define BASE 10
+
 typedef struct muchlong
 {
 	char *num;
@@ -16,10 +18,14 @@ int longIsGreater(verylong a, verylong b);
 int longIsLess(verylong a, verylong b);
 int longSum(verylong a, verylong b, verylong *sum);
 int longMul(verylong a, verylong b, verylong *mul);
+int longMul_karatsuba(verylong a, verylong b, verylong *rez);
 int longDiv(verylong a, verylong b, verylong *quot, verylong *div);
 int longExp(verylong a, verylong b, verylong *exp);
 int removeLeadingZeros(verylong *a);
 int print_bcdh(verylong a);
+int left_shift(verylong *a, long long count);
+
+
 //}
 
 //{ free & read
@@ -388,6 +394,98 @@ int longMul(verylong a, verylong b, verylong *rez)
 	{
 		return 3;
 	}
+	
+	return 0;
+}
+
+int left_shift(verylong *a, long long count)
+{
+	a->num = realloc(a->num, a->len + count);
+	a->len += count;
+	return 0;
+}
+
+int longMul_karatsuba(verylong a, verylong b, verylong *rez)
+{
+	rez->num = malloc(sizeof(a.len+b.len));
+	if( a.len == 1 || b.len == 1){
+			printf("early! ");
+			longMul(a,b,rez);
+			print_bcdh(*rez);
+			return 0;
+	}
+	printf("NOT early!\n");
+	long long m = longIsGreater(a,b) ? b.len/2 : a.len/2;
+	long long i,j=0;
+	
+	verylong number_part_a1, number_part_a2;
+	verylong number_part_b1, number_part_b2;
+	
+	verylong z0, z1, z2;
+	verylong sum_a1_a2, sum_b1_b2;
+	
+	verylong sum_z1_z2;
+	verylong sum_z1z2_z0;
+	
+	number_part_a1.len = m;
+	number_part_a2.len = a.len - m;
+	number_part_b1.len = m;
+	number_part_b2.len = b.len - m;
+	
+	number_part_a1.num = malloc(number_part_a1.len);
+	number_part_a2.num = malloc(number_part_a2.len);
+	number_part_b1.num = malloc(number_part_b1.len);
+	number_part_b2.num = malloc(number_part_b2.len);
+	
+	number_part_a1.isNegativeBool = 0;
+	number_part_a2.isNegativeBool = 0;
+	number_part_b1.isNegativeBool = 0;
+	number_part_b2.isNegativeBool = 0;
+	z0.isNegativeBool = 0;
+	z1.isNegativeBool = 0;
+	z2.isNegativeBool = 0;
+	sum_a1_a2.isNegativeBool = 0;
+	sum_b1_b2.isNegativeBool = 0;
+	sum_z1_z2.isNegativeBool = 0;
+	sum_z1z2_z0.isNegativeBool = 0;
+	
+		printf("succ %d %d %d %d %d\n",m,number_part_a1.len,number_part_a2.len,number_part_b1.len,number_part_b2.len);
+	
+	for(i=0;i<m;i++){
+		number_part_a1.num[i] = a.num[i];
+		number_part_b1.num[i] = b.num[i];
+	}
+	for(i=m;i<a.len;i++)
+		number_part_a2.num[j++] = a.num[i];
+		j = 0;
+	for(i=m;i<b.len;i++)
+		number_part_b2.num[j++] = b.num[i];
+		
+	longSum(number_part_a1,number_part_a2,&sum_a1_a2);
+	longSum(number_part_b1,number_part_b2,&sum_b1_b2);
+		
+	longMul_karatsuba(number_part_a1, number_part_b1, &z2);
+	longMul_karatsuba(number_part_a2, number_part_b2, &z0);
+	longMul_karatsuba(sum_a1_a2, sum_b1_b2, &z1);
+	
+	verylong z0_z2_negSum;
+	
+	longSum(z0,z2,&z0_z2_negSum);
+	z0_z2_negSum.isNegativeBool = 1;
+	longSum(z1,z0_z2_negSum,&z1);
+
+	left_shift(&z1,m);
+	left_shift(&z2,2*m);
+
+	longSum(z1,z2,&sum_z1_z2);
+	longSum(sum_z1_z2,z0,rez);
+
+	//longSum(*rez,z0_z2_negSum,rez);
+
+	printf("<gay>\n");
+	print_bcdh(z2);print_bcdh(z0);print_bcdh(z1);
+	printf("</gay>\n");
+	
 	
 	return 0;
 }
