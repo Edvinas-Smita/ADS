@@ -236,36 +236,60 @@ int verylongA_EQUALS_longlongB_Bool(verylong a, long long b, int treatAsSignedBo
 	}
 	char bLen;
 	unsigned long long bCopy = (unsigned long long) b;
-	for (bLen = 1; ;++bLen)
+	if (treatAsSignedBool)
 	{
-		if ((bCopy /= 10) == 0)
+		for (bLen = 1; ;++bLen)
 		{
-			break;
+			if ((b /= 10) == 0)
+			{
+				break;
+			}
+		}
+		b = (long long) bCopy;
+	}
+	else
+	{
+		for (bLen = 1; ;++bLen)
+		{
+			if ((bCopy /= 10) == 0)
+			{
+				break;
+			}
 		}
 	}
+	
 	if (a.len != bLen)
 	{
 		return 0;
 	}
-	
-	if (!treatAsSignedBool || (a.isNegativeBool && b < 0) || (!a.isNegativeBool && b > 0))
+	if (!treatAsSignedBool)
 	{
-		unsigned char i, j;
-		if (treatAsSignedBool && b < 0)
+		unsigned long long aInLLU;
+		if (castVerylongToULongLong(a, &aInLLU))
+		{
+			return 0;
+		}
+		if (aInLLU == (unsigned long long) b)
+		{
+			return 1;
+		}
+		return 0;
+	}
+	
+	if ((a.isNegativeBool && b < 0) || (!a.isNegativeBool && b > 0))
+	{
+		char i;
+		if (b < 0)
 		{
 			b = -b;
 		}
-		for (i=0; i<bLen; ++i)
+		for (i=bLen - 1; i > 0; --i)
 		{
-			bCopy = b;
-			for (j=1; j<bLen - i; ++j)
-			{
-				bCopy /= 10;
-			}
-			if (a.num[i] != bCopy % 10)
+			if (a.num[i] != b % 10)
 			{
 				return 0;
 			}
+			b /= 10;
 		}
 		return 1;
 	}
@@ -283,11 +307,25 @@ int verylongA_IS_GREATER_THAN_longlongB_Bool(verylong a, long long b, int treatA
 	}
 	char bLen;
 	unsigned long long bCopy = (unsigned long long) b;
-	for (bLen = 1; ;++bLen)
+	if (treatAsSignedBool)
 	{
-		if ((bCopy /= 10) == 0)
+		for (bLen = 1; ;++bLen)
 		{
-			break;
+			if ((b /= 10) == 0)
+			{
+				break;
+			}
+		}
+		b = (long long) bCopy;
+	}
+	else
+	{
+		for (bLen = 1; ;++bLen)
+		{
+			if ((bCopy /= 10) == 0)
+			{
+				break;
+			}
 		}
 	}
 	
@@ -306,10 +344,10 @@ int verylongA_IS_GREATER_THAN_longlongB_Bool(verylong a, long long b, int treatA
 			else
 			{
 				unsigned char i, j;
-				for (i=0; i<bLen; ++i)
+				for (i = 0; i<bLen; ++i)
 				{
-					bCopy = b;
-					for (j=1; j<bLen - i; ++j)
+					bCopy = (unsigned long long) -b;
+					for (j = 1; j<bLen - i; ++j)
 					{
 						bCopy /= 10;
 					}
@@ -319,7 +357,7 @@ int verylongA_IS_GREATER_THAN_longlongB_Bool(verylong a, long long b, int treatA
 					}
 					else if (a.num[i] < bCopy % 10)
 					{
-						return 0;
+						return 1;
 					}
 				}
 			}
@@ -337,10 +375,10 @@ int verylongA_IS_GREATER_THAN_longlongB_Bool(verylong a, long long b, int treatA
 			else
 			{
 				unsigned char i, j;
-				for (i=0; i<bLen; ++i)
+				for (i = 0; i<bLen; ++i)
 				{
 					bCopy = b;
-					for (j=1; j<bLen - i; ++j)
+					for (j = 1; j<bLen - i; ++j)
 					{
 						bCopy /= 10;
 					}
@@ -377,10 +415,10 @@ int verylongA_IS_GREATER_THAN_longlongB_Bool(verylong a, long long b, int treatA
 		else
 		{
 			unsigned char i, j;
-			for (i=0; i<bLen; ++i)
+			for (i = 0; i<bLen; ++i)
 			{
-				bCopy = b;
-				for (j=1; j<bLen - i; ++j)
+				bCopy = (unsigned long long) b;
+				for (j = 1; j<bLen - i; ++j)
 				{
 					bCopy /= 10;
 				}
@@ -405,11 +443,25 @@ int verylongA_IS_LESS_THAN_longlongB_Bool(verylong a, long long b, int treatAsSi
 	}
 	char bLen;
 	unsigned long long bCopy = (unsigned long long) b;
-	for (bLen = 1; ;++bLen)
+	if (treatAsSignedBool)
 	{
-		if ((bCopy /= 10) == 0)
+		for (bLen = 1; ;++bLen)
 		{
-			break;
+			if ((b /= 10) == 0)
+			{
+				break;
+			}
+		}
+		b = (long long) bCopy;
+	}
+	else
+	{
+		for (bLen = 1; ;++bLen)
+		{
+			if ((bCopy /= 10) == 0)
+			{
+				break;
+			}
 		}
 	}
 	
@@ -428,15 +480,16 @@ int verylongA_IS_LESS_THAN_longlongB_Bool(verylong a, long long b, int treatAsSi
 			else
 			{
 				unsigned char i, j;
-				for (i=0; i<bLen; ++i)
+				for (i = 0; i<bLen; ++i)
 				{
-					bCopy = b;
-					for (j=1; j<bLen - i; ++j)
+					bCopy = (unsigned long long) -b;
+					for (j = 1; j<bLen - i; ++j)
 					{
 						bCopy /= 10;
 					}
 					if (a.num[i] > bCopy % 10)
 					{
+				printf(":::::%d %d\n", a.num[i], bCopy % 10);
 						return 1;
 					}
 					else if (a.num[i] < bCopy % 10)
@@ -459,10 +512,10 @@ int verylongA_IS_LESS_THAN_longlongB_Bool(verylong a, long long b, int treatAsSi
 			else
 			{
 				unsigned char i, j;
-				for (i=0; i<bLen; ++i)
+				for (i = 0; i<bLen; ++i)
 				{
 					bCopy = b;
-					for (j=1; j<bLen - i; ++j)
+					for (j = 1; j<bLen - i; ++j)
 					{
 						bCopy /= 10;
 					}
@@ -490,19 +543,19 @@ int verylongA_IS_LESS_THAN_longlongB_Bool(verylong a, long long b, int treatAsSi
 	{
 		if (a.len > bLen)
 		{
-			return 1;
+			return 0;
 		}
 		else if (a.len < bLen)
 		{
-			return 0;
+			return 1;
 		}
 		else
 		{
 			unsigned char i, j;
-			for (i=0; i<bLen; ++i)
+			for (i = 0; i<bLen; ++i)
 			{
 				bCopy = b;
-				for (j=1; j<bLen - i; ++j)
+				for (j = 1; j<bLen - i; ++j)
 				{
 					bCopy /= 10;
 				}
