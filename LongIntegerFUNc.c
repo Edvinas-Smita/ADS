@@ -1,7 +1,13 @@
+//Autoriai: Šmita Edvinas ir Šaulys Teodoras - VU MIF PS 1k. 2gr. 2pogr. 2017-2018m.m.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "LongIntegerHeader.h"
+
+//{ private funcion declarations
+int removeLeadingZeros(verylong *a);
+int recursivePowerOfTwoExponent(verylong *powers, unsigned long long b, unsigned long long lastFound, verylong *exp);
+//}
 
 //{ free & read
 void freeStruct(verylong *a)
@@ -22,9 +28,13 @@ int readToStruct(FILE *input, verylong *a)
 	
 	a->num = NULL;
 	a->isNegativeBool = 0;
-	for(i = 0;; i++)
+	for(i = 0;; ++i)
 	{
 		a->num = realloc(a->num, i+1);
+		if (a->num == NULL)
+		{
+			return -1;
+		}
 		a->num[i] = getc(input);
 		if(a->num[i]==0xA || a->num[i]==0xFF || a->num[i]=='	' || a->num[i]==' ')
 		{
@@ -46,10 +56,11 @@ int readToStruct(FILE *input, verylong *a)
 			}
 			else
 			{
-				printf("Enter a number pretty please!\n");
+				return 1;
+				/*printf("Enter a number pretty please!\n");
 				a->isNegativeBool=0;
 				while(getc(input)!=0xA);
-				i=-1;
+				i=-1;*/
 			}
 		}
 		else
@@ -58,11 +69,7 @@ int readToStruct(FILE *input, verylong *a)
 		}
 	}
 	a->len=i;
-	if (removeLeadingZeros(a))
-	{
-		return 1;
-	}
-	return 0;
+	return removeLeadingZeros(a);
 }
 //}
 
@@ -489,7 +496,6 @@ int verylongA_IS_LESS_THAN_longlongB_Bool(verylong a, long long b, int treatAsSi
 					}
 					if (a.num[i] > bCopy % 10)
 					{
-				printf(":::::%d %d\n", a.num[i], bCopy % 10);
 						return 1;
 					}
 					else if (a.num[i] < bCopy % 10)
@@ -636,6 +642,10 @@ int verylongA_IS_A_POWER_OF_10(verylong a)
 //}
 
 //{ aritmetic
+void invertVerylongSign(verylong *a)
+{
+	a->isNegativeBool = a->isNegativeBool ? 0 : 1;
+}
 int longSum(verylong a, verylong b, verylong *sum)
 {
 	if (a.len == -1LLU || b.len == -1LLU)
@@ -647,7 +657,7 @@ int longSum(verylong a, verylong b, verylong *sum)
 	sum->num = calloc(sum->len, 1);
 	if (sum->num==NULL)
 	{
-		return 2;
+		return -1;
 	}
 	
 	unsigned long long i, carry = 0;
@@ -736,12 +746,7 @@ int longSum(verylong a, verylong b, verylong *sum)
 		sum->isNegativeBool=1;
 	}
 	
-	if (removeLeadingZeros(sum))
-	{
-		return 1;
-	}
-	
-	return 0;
+	return removeLeadingZeros(sum);
 }
 int longMul(verylong a, verylong b, verylong *rez)
 {
@@ -790,7 +795,7 @@ int longMul(verylong a, verylong b, verylong *rez)
 	rez->num = calloc(rez->len, 1);
 	if (rez->num == NULL)
 	{
-		return 2;
+		return -1;
 	}
 	
 	unsigned long long i, j, shift_count = 0;
@@ -808,12 +813,7 @@ int longMul(verylong a, verylong b, verylong *rez)
  		shift_count++;
  	}
 	
-	if (removeLeadingZeros(rez))
-	{
-		return 3;
-	}
-	
-	return 0;
+	return removeLeadingZeros(rez);
 }
 int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
 {
@@ -822,6 +822,9 @@ int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
 		return 1;
 	}
 	
+	rem->len = 0;
+	rem->num = NULL;
+	rem->isNegativeBool = a.isNegativeBool;
 	if (a.len<b.len)
 	{
 		quot->len = 0;
@@ -829,45 +832,53 @@ int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
 		quot->isNegativeBool = 0;
 		
 		rem->len = a.len;
-		rem->isNegativeBool = a.isNegativeBool;
 		rem->num = malloc(rem->len);
+		if (rem->num == NULL)
+		{
+			return -1;
+		}
 		memcpy(rem->num, a.num, a.len);
 		
 		return 0;
 	}
 	
+	quot->isNegativeBool = (a.isNegativeBool || b.isNegativeBool) && !(a.isNegativeBool && b.isNegativeBool) ? 1 : 0;
 	if (verylongA_IS_A_POWER_OF_10(b))
 	{
 		rem->len = b.len - 1;
 		rem->num = malloc(rem->len);
-		quot->isNegativeBool = rem->isNegativeBool = a.isNegativeBool;
+		if (rem->num == NULL)
+		{
+			return -1;
+		}
 		
 		quot->len = a.len - b.len + 1;
+		memcpy(rem->num, a.num + quot->len, quot->len);
 		quot->num = malloc(quot->len);
 		memcpy(quot->num, a.num, quot->len);
 		
 		return 0;
 	}
 	
-	quot->isNegativeBool = (a.isNegativeBool || b.isNegativeBool) && !(a.isNegativeBool && b.isNegativeBool) ? 1 : 0;
 	quot->len = a.len - b.len + 1;
 	quot->num = calloc(quot->len, 1);
-	
-	rem->len = 0;
-	rem->num = NULL;
+	if (quot->num == NULL)
+	{
+		return -1;
+	}
 	
 	unsigned long long i;
-	verylong compare;
+	verylong compare = {NULL, 0, 0};
 	char doDouble, aNeg = a.isNegativeBool, bNeg = b.isNegativeBool;
 	a.isNegativeBool = b.isNegativeBool = 0;
 	for (i = 0; i<quot->len; i++)
 	{
-		freeStruct(&compare);
 		quot->num[i] = 5;
 		doDouble = 1;
+		freeStruct(&compare);
 		if (longMul(b, *quot, &compare))
 		{
-			return 1;
+			return 2;
 		}
 		while (1)
 		{
@@ -883,12 +894,6 @@ int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
 					break;
 				}
 				quot->num[i] += doDouble ? 2 : 1;
-				doDouble = 0;
-				if (longMul(b, *quot, &compare))
-				{
-					freeStruct(&compare);
-					return 1;
-				}
 			}
 			else if (verylongA_IS_GREATER_THAN_verylongB_Bool(compare, a))		//reikia mazinti
 			{
@@ -898,12 +903,12 @@ int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
 					break;
 				}
 				quot->num[i] -= doDouble ? 2 : 1;
-				doDouble = 0;
-				if (longMul(b, *quot, &compare))
-				{
-					freeStruct(&compare);
-					return 1;
-				}
+			}
+			doDouble = 0;
+			freeStruct(&compare);
+			if (longMul(b, *quot, &compare))
+			{
+				return 2;
 			}
 		}
 	}
@@ -913,18 +918,18 @@ int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
 	if (removeLeadingZeros(quot))
 	{
 		freeStruct(&compare);
-		return 1;
+		return -1;
 	}
+	freeStruct(&compare);
 	if (longMul(b, *quot, &compare))
 	{
-		freeStruct(&compare);
-		return 1;
+		return 2;
 	}
 	compare.isNegativeBool = compare.isNegativeBool ? 0 : 1;
 	if (longSum(a, compare, rem))
 	{
 		freeStruct(&compare);
-		return 1;
+		return 2;
 	}
 	freeStruct(&compare);
 	
@@ -953,8 +958,10 @@ int longExp(verylong a, verylong b, verylong *exp)
 	}
 	if (b.isNegativeBool == 1)
 	{
-		return -1;
+		return 1;
 	}
+	
+	char *leakPlug;
 	exp->isNegativeBool = a.isNegativeBool ? b.num[b.len-1] % 2 == 1 ? 1 : 0 : 0;	//jei baze yra neigiama ir laipsnis nelyginis tai exponentas neigiamas
 	if (verylongA_IS_A_POWER_OF_10(a))
 	{
@@ -973,18 +980,25 @@ int longExp(verylong a, verylong b, verylong *exp)
 		verylong testlimit;
 		if (castULongLongToVerylong(a.len - 1, &testlimit))
 		{
-			freeStruct(&testlimit);
 			return -1;
 		}
+		leakPlug = testlimit.num;
 		if (longMul(testlimit, b, &testlimit))
 		{
-			freeStruct(&testlimit);
+			if (leakPlug != NULL)
+			{
+				free(leakPlug);
+			}
 			return -1;
+		}
+		if (leakPlug != NULL)
+		{
+			free(leakPlug);
 		}
 		if (castVerylongToULongLong(testlimit, &(exp->len)))
 		{
 			freeStruct(&testlimit);
-			return 1;	//exponent is over limit
+			return 2;	//exponent is over limit
 		}
 		freeStruct(&testlimit);
 		++exp->len;
@@ -1017,7 +1031,12 @@ int longExp(verylong a, verylong b, verylong *exp)
 		if (b.num[0] == 3)
 		{
 			longMul(a, a, exp);
+			leakPlug = exp->num;
 			longMul(*exp, a, exp);
+			if (leakPlug != NULL)
+			{
+				free(leakPlug);
+			}
 			return 0;
 		}
 	}
@@ -1025,8 +1044,9 @@ int longExp(verylong a, verylong b, verylong *exp)
 	unsigned long long bInLLU;
 	if (castVerylongToULongLong(b, &bInLLU))
 	{
-		return 1;
+		return 3;
 	}
+	
 	exp->len = 1;
 	exp->num = malloc(1);	//paruosiamas exponentas nes rekursyviai is jo tik daugina ir jei nebutu inicijuota i 1 tai daygybos rezultatai butu keisti
 	if (exp->num == NULL)
@@ -1035,22 +1055,39 @@ int longExp(verylong a, verylong b, verylong *exp)
 	}
 	exp->num[0] = 1;
 	
-	printf("\n");
-	if (recursivePowerOfTwoExponent(&a, bInLLU, bInLLU, exp))
+	verylong powers = {malloc(a.len), a.len, 0};
+	if (powers.num == NULL)
 	{
-		return 1;
+		return -1;
 	}
+	memcpy(powers.num, a.num, a.len);
+	
+	if (recursivePowerOfTwoExponent(&powers, bInLLU, bInLLU, exp))
+	{
+		freeStruct(&powers);
+		return 3;
+	}
+	freeStruct(&powers);
 	return 0;
 }
-int recursivePowerOfTwoExponent(verylong *a, unsigned long long b, unsigned long long lastFound, verylong *exp)
+int recursivePowerOfTwoExponent(verylong *powers, unsigned long long b, unsigned long long lastFound, verylong *exp)
 {
 	if (lastFound == 2)
 	{
 		if (b == 1)
 		{
-			if (longMul(*a, *exp, exp))
+			char *leakPlugBIsOne = exp->num;
+			if (longMul(*powers, *exp, exp))
 			{
+				if (leakPlugBIsOne != NULL)
+				{
+					free(leakPlugBIsOne);
+				}
 				return 1;
+			}
+			if (leakPlugBIsOne != NULL)
+			{
+				free(leakPlugBIsOne);
 			}
 		}
 		return 0;
@@ -1063,20 +1100,38 @@ int recursivePowerOfTwoExponent(verylong *a, unsigned long long b, unsigned long
 		closestPowerOf2 /= 2;
 	}
 	
-	printf("To calculate (b): %llu\tLast power: %llu\tNext power: %llu\n", b, lastFound, closestPowerOf2);
-	if (recursivePowerOfTwoExponent(a, closestPowerOf2 <= b ? b - closestPowerOf2 : b, closestPowerOf2, exp))
+	//printf("To calculate (b): %llu\tLast power: %llu\tNext power: %llu\n", b, lastFound, closestPowerOf2);
+	if (recursivePowerOfTwoExponent(powers, closestPowerOf2 <= b ? b - closestPowerOf2 : b, closestPowerOf2, exp))
 	{
 		return 1;
 	}
-	if (longMul(*a, *a, a))		//a laikomas kiekvienas a pakeltas dvejeto laipsniu (a^1, a^2, a^4, a^8, ...)
+	char *leakPlug = powers->num;
+	if (longMul(*powers, *powers, powers))		//powers laikomas kiekvienas a pakeltas dvejeto laipsniu (a^1, a^2, a^4, a^8, ...)
 	{
+		if (leakPlug != NULL)
+		{
+			free(leakPlug);
+		}
 		return 1;
+	}
+	if (leakPlug != NULL)
+	{
+		free(leakPlug);
 	}
 	if (closestPowerOf2 <= b)		//jei padauginus is a pakelto dvejeto laipsniu exponentas nebus didesnis, jei norima, tada dauginti
 	{
-		if (longMul(*a, *exp, exp))
+		leakPlug = exp->num;
+		if (longMul(*powers, *exp, exp))
 		{
+			if (leakPlug != NULL)
+			{
+				free(leakPlug);
+			}
 			return 1;
+		}
+		if (leakPlug != NULL)
+		{
+			free(leakPlug);
 		}
 	}
 	return 0;
@@ -1108,18 +1163,31 @@ int removeLeadingZeros(verylong *a)
 	a->num = realloc(a->num, a->len);
 	if (a->num==NULL && a->len!=0)
 	{
-		return 1;
+		return -1;
 	}
 	return 0;
 }
-int print_bcdh(verylong a)
+int print_bcdh(FILE *output, verylong a)
 {	
 	unsigned long long i;
 	if(a.isNegativeBool)
-		printf("-");
+	{
+		if (putc('-', output) == 0xFF)
+		{
+			return 1;
+		}
+	}
 	for(i=0;i<a.len;i++)
-		printf("%x", a.num[i]);
-	printf("\n");
+	{
+		if (putc(a.num[i] + 0x30, output) == 0xFF)
+		{
+			return 1;
+		}
+	}
+	if (putc('\n', output) == 0xFF)
+	{
+		return 1;
+	}
 	
 	return 0;
 }

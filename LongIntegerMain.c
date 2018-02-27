@@ -1,3 +1,4 @@
+//Autoriai: Šmita Edvinas ir Šaulys Teodoras - VU MIF PS 1k. 2gr. 2pogr. 2017-2018m.m.
 #include <stdio.h>
 #include "LongIntegerHeader.h"
 
@@ -8,14 +9,26 @@ int main()
 	long long regularLongLong;
 	int treatRegularAsSigned;
 	printf("Enter two integers to be converted to verylong format:\n");
-	readToStruct(stdin, &a);
-	readToStruct(stdin, &b);
+	if(readToStruct(stdin, &a))
+	{
+		printf("Something went wrong with reading the value! Terminating...\n");
+		return -1;
+	}
+	if(readToStruct(stdin, &b))
+	{
+		printf("Something went wrong with reading the value! Terminating...\n");
+		return -1;
+	}
 	
 	while(1)
 	{
 		printf("Arithmetic:\n\t'+' Sum,\n\t'*' Multiplication,\n\t'/' Division with remainder,\n\t'^' Exponentiation;\nOther:\n\t'=' Signed compare between verylong values,\n\t'L' Compare verylong with long long,\n\t'a' / 'b' Print entered values,\n\t'R' Reenter integers to convert to verylong,\n\t'0' Exit;\n");
 		ch = getc(stdin);
-		if (ch!=0xA && ch!=0xD && ch!=0xFF)
+		if (ch == 0xFF)
+		{
+			return 0;
+		}
+		if (ch!=0xA && ch!=0xD)
 		{
 			while(getc(stdin)!=0xA);
 		}
@@ -34,7 +47,7 @@ int main()
 					printf("Something went wrong while calculating! Terminating...\n");
 					return 1;
 				}
-				if (print_bcdh(sum))
+				if (print_bcdh(stdout, sum))
 				{
 					printf("Something went wrong with printing the value! Terminating...\n");
 					return 1;
@@ -51,7 +64,7 @@ int main()
 					printf("Something went wrong while calculating! Terminating...\n");
 					return 1;
 				}
-				if (print_bcdh(mul))
+				if (print_bcdh(stdout, mul))
 				{
 					printf("Something went wrong with printing the value! Terminating...\n");
 					return 1;
@@ -69,13 +82,13 @@ int main()
 				}
 				
 				printf("Quotient: ");
-				if (print_bcdh(quot))
+				if (print_bcdh(stdout, quot))
 				{
 					printf("Something went wrong with printing the value! Terminating...\n");
 					return 1;
 				}
 				printf("Remainder: ");
-				if (print_bcdh(rem))
+				if (print_bcdh(stdout, rem))
 				{
 					printf("Something went wrong with printing the value! Terminating...\n");
 					return 1;
@@ -94,7 +107,7 @@ int main()
 					printf("Something went wrong while calculating! Terminating...\n");
 					return 1;
 				}
-				if (print_bcdh(exp))
+				if (print_bcdh(stdout, exp))
 				{
 					printf("Something went wrong with printing the value! Terminating...\n");
 					return 1;
@@ -154,19 +167,33 @@ int main()
 			{
 				freeStruct(&a);
 				freeStruct(&b);
-				readToStruct(stdin, &a);
-				readToStruct(stdin, &b);
+				if(readToStruct(stdin, &a))
+				{
+					return -1;
+				}
+				if(readToStruct(stdin, &b))
+				{
+					return -1;
+				}
 				break;
 			}
 			
 			case 'a':
 			{
-				print_bcdh(a);
+				if (print_bcdh(stdout, a))
+				{
+					printf("Something went wrong with printing the value! Terminating...\n");
+					return -1;
+				}
 				break;
 			}
 			case 'b':
 			{
-				print_bcdh(b);
+				if (print_bcdh(stdout, b))
+				{
+					printf("Something went wrong with printing the value! Terminating...\n");
+					return -1;
+				}
 				break;
 			}
 			
