@@ -5,7 +5,7 @@
 int main()
 {
 	char ch;
-	verylong a, b, sum, mul, quot, rem, exp;
+	verylong a, b, sum, diff, mul, quot, rem, exp;
 	long long regularLongLong;
 	int treatRegularAsSigned;
 	printf("Enter two integers to be converted to verylong format:\n");
@@ -22,7 +22,7 @@ int main()
 	
 	while(1)
 	{
-		printf("Arithmetic:\n\t'+' Sum,\n\t'*' Multiplication,\n\t'/' Division with remainder,\n\t'^' Exponentiation;\nOther:\n\t'=' Signed compare between verylong values,\n\t'L' Compare verylong with long long,\n\t'a' / 'b' Print entered values,\n\t'R' Reenter integers to convert to verylong,\n\t'0' Exit;\n");
+		printf("Arithmetic:\n\t'+' Sum,\n\t'-' Difference,\n\t'*' Multiplication,\n\t'/' Division with remainder,\n\t'^' Exponentiation;\nOther:\n\t'=' Signed compare between verylong values,\n\t'L' Compare verylong with long long,\n\t'a' / 'b' Print entered values,\n\t'R' Reenter integers to convert to verylong,\n\t'0' Exit;\n");
 		ch = getc(stdin);
 		if (ch == 0xFF)
 		{
@@ -53,6 +53,23 @@ int main()
 					return 1;
 				}
 				freeStruct(&sum);
+				break;
+			}
+			case '-':
+			{
+				printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+				printf("Diff: ");
+				if (longDiff(a, b, &diff))
+				{
+					printf("Something went wrong while calculating! Terminating...\n");
+					return 1;
+				}
+				if (print_bcdh(stdout, diff))
+				{
+					printf("Something went wrong with printing the value! Terminating...\n");
+					return 1;
+				}
+				freeStruct(&diff);
 				break;
 			}
 			case '*':

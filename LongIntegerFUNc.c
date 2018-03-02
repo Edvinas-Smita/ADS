@@ -17,6 +17,7 @@ void freeStruct(verylong *a)
 		if (a->num!=NULL)
 		{
 			free(a->num);
+			a->num = NULL;
 		}
 		a->len = 0;
 		a->isNegativeBool = 0;
@@ -26,7 +27,12 @@ int readToStruct(FILE *input, verylong *a)
 {
 	unsigned long long i;
 	
-	a->num = NULL;
+	a->len = 1;
+	a->num = calloc(1, 1);
+	if (a->num == NULL)
+	{
+		return -1;
+	}
 	a->isNegativeBool = 0;
 	for(i = 0;; ++i)
 	{
@@ -76,11 +82,7 @@ int readToStruct(FILE *input, verylong *a)
 //{ comparison
 int verylongA_EQUALS_verylongB_Bool(verylong a, verylong b)
 {
-	if (!(a.len || b.len))
-	{
-		return 1;
-	}
-	if (a.num==NULL || b.num==NULL)
+	if (a.len == 0 || a.num == NULL || b.len == 0 || b.num == NULL)
 	{
 		return 0;
 	}
@@ -100,11 +102,7 @@ int verylongA_EQUALS_verylongB_Bool(verylong a, verylong b)
 }
 int verylongA_IS_GREATER_THAN_verylongB_Bool(verylong a, verylong b)
 {
-	if (!(a.len || b.len))
-	{
-		return 0;
-	}
-	if (a.num==NULL || b.num==NULL)
+	if (a.len == 0 || a.num == NULL || b.len == 0 || b.num == NULL)
 	{
 		return 0;
 	}
@@ -166,11 +164,7 @@ int verylongA_IS_GREATER_THAN_verylongB_Bool(verylong a, verylong b)
 }
 int verylongA_IS_LESS_THAN_verylongB_Bool(verylong a, verylong b)
 {
-	if (!(a.len || b.len))
-	{
-		return 0;
-	}
-	if (a.num==NULL || b.num==NULL)
+	if (a.len == 0 || a.num == NULL || b.len == 0 || b.num == NULL)
 	{
 		return 0;
 	}
@@ -237,7 +231,11 @@ int verylongA_IS_LESS_THAN_verylongB_Bool(verylong a, verylong b)
 
 int verylongA_EQUALS_longlongB_Bool(verylong a, long long b, int treatAsSignedBool)
 {
-	if (a.len == 0 && b == 0)
+	if (a.len == 0 || a.num == NULL)
+	{
+		return 0;
+	}
+	if (a.len == 1 && a.num[0] == 0 && b == 0)
 	{
 		return 1;
 	}
@@ -308,7 +306,7 @@ int verylongA_EQUALS_longlongB_Bool(verylong a, long long b, int treatAsSignedBo
 }
 int verylongA_IS_GREATER_THAN_longlongB_Bool(verylong a, long long b, int treatAsSignedBool)
 {
-	if (a.len == 0 && b == 0)
+	if (a.len == 0 || a.num == NULL)
 	{
 		return 0;
 	}
@@ -444,7 +442,7 @@ int verylongA_IS_GREATER_THAN_longlongB_Bool(verylong a, long long b, int treatA
 }
 int verylongA_IS_LESS_THAN_longlongB_Bool(verylong a, long long b, int treatAsSignedBool)
 {
-	if (a.len == 0 && b == 0)
+	if (a.len == 0 || a.num == NULL)
 	{
 		return 0;
 	}
@@ -581,6 +579,10 @@ int verylongA_IS_LESS_THAN_longlongB_Bool(verylong a, long long b, int treatAsSi
 
 int verylongA_CAN_BE_STORED_IN_ULongLong(verylong a)
 {
+	if (a.len == 0 || a.num == NULL)
+	{
+		return 0;
+	}
 	unsigned long long MAX_ULongLong = -1;
 	char MAX_LEN_ULongLong;
 	for (MAX_LEN_ULongLong = 1; ;++MAX_LEN_ULongLong)
@@ -622,6 +624,10 @@ int verylongA_CAN_BE_STORED_IN_ULongLong(verylong a)
 
 int verylongA_IS_A_POWER_OF_10(verylong a)
 {
+	if (a.len == 0 || a.num == NULL)
+	{
+		return 0;
+	}
 	if (a.num[0] == 1)
 	{
 		unsigned long long i;
@@ -648,6 +654,10 @@ void invertVerylongSign(verylong *a)
 }
 int longSum(verylong a, verylong b, verylong *sum)
 {
+	if (a.len == 0 || a.num == NULL || b.len == 0 || b.num == NULL)
+	{
+		return -2;	//bad params
+	}
 	if (a.len == -1LLU || b.len == -1LLU)
 	{
 		return 1;
@@ -748,18 +758,134 @@ int longSum(verylong a, verylong b, verylong *sum)
 	
 	return removeLeadingZeros(sum);
 }
+int longDiff(verylong a, verylong b, verylong *diff)
+{
+	if (a.len == 0 || a.num == NULL || b.len == 0 || b.num == NULL)
+	{
+		return -2;	//bad params
+	}
+	if (a.len == -1LLU || b.len == -1LLU)
+	{
+		return 1;
+	}
+	invertVerylongSign(&b);
+	
+	diff->len = a.len > b.len ? a.len+1 : b.len+1;
+	diff->num = calloc(diff->len, 1);
+	if (diff->num==NULL)
+	{
+		return -1;
+	}
+	
+	unsigned long long i, carry = 0;
+	if (!a.isNegativeBool && !b.isNegativeBool)	//teigiamas+teigiamas
+	{
+		for (i=1; i <= diff->len; ++i)
+		{
+			diff->num[diff->len-i] = (i<=a.len ? a.num[a.len-i] : 0) + (i<=b.len ? b.num[b.len-i] : 0);
+			if(carry)
+			{
+				carry = 0;
+				diff->num[diff->len-i]++;
+			}
+			if(diff->num[diff->len-i] > 9)
+			{
+				diff->num[diff->len-i] -= 10;
+				carry = 1;
+			}
+		}
+		diff->isNegativeBool = 0;
+	}
+	else if(!a.isNegativeBool && b.isNegativeBool)	//teigiamas+neigiamas
+	{
+		for(i=1; i<=diff->len; i++)
+		{
+			diff->num[diff->len-i] = (i<=a.len ? a.num[a.len-i] : 0) - (i<=b.len ? b.num[b.len-i] : 0);
+			if(carry)
+			{
+				carry = 0;
+				diff->num[diff->len-i]--;
+			}
+			if(diff->num[diff->len-i]<0)
+			{
+				diff->num[diff->len-i] += 10;
+				carry = 1;
+			}
+		}
+		diff->isNegativeBool=carry;
+		if(carry)
+		{
+			diff->num[diff->len-1]=10-diff->num[diff->len-1];
+			for(i=0; i<diff->len-1; i++)
+				diff->num[i] = 9-diff->num[i];
+		}
+	}
+	else if(a.isNegativeBool && !b.isNegativeBool)	//neigiamas+teigiamas
+	{
+		for(i=1; i<=diff->len; i++)
+		{
+			diff->num[diff->len-i] = -(i<=a.len ? a.num[a.len-i] : 0) + (i<=b.len ? b.num[b.len-i] : 0);
+			if(carry)
+			{
+				carry = 0;
+				diff->num[diff->len-i]--;
+			}
+			if(diff->num[diff->len-i]<0)
+			{
+				diff->num[diff->len-i]+=10;
+				carry = 1;
+			}
+		}
+		diff->isNegativeBool=carry;
+		if(carry)
+		{
+			diff->num[diff->len-1] = 10 - diff->num[diff->len-1];
+			for(i=0; i<diff->len-1; i++)
+				diff->num[i] = 9-diff->num[i];
+		}
+	}
+	else if(a.isNegativeBool && b.isNegativeBool)		//neigiamas+neigiamas
+	{
+		for(i=1; i<=diff->len; i++)
+		{
+			diff->num[diff->len-i] = (i<=a.len ? a.num[a.len-i] : 0) + (i<=b.len ? b.num[b.len-i] : 0);
+			if(carry)
+			{
+				carry = 0;
+				diff->num[diff->len-i]++;
+			}
+			if(diff->num[diff->len-i]>9)
+			{
+				diff->num[diff->len-i] -= 10;
+				carry = 1;
+			}
+		}
+		diff->isNegativeBool=1;
+	}
+	
+	return removeLeadingZeros(diff);
+}
 int longMul(verylong a, verylong b, verylong *rez)
 {
-	if (a.len == 0 || b.len == 0)
+	if (a.len == 0 || a.num == NULL || b.len == 0 || b.num == NULL)
 	{
-		rez->len = 0;
-		rez->num = NULL;
-		rez->isNegativeBool = 0;
-		return 0;
+		return -2;	//bad params
 	}
 	if (a.len + b.len < a.len || a.len + b.len < b.len)
 	{
 		return 1;
+	}
+	rez->len = 1;
+	rez->num = calloc(1, 1);
+	if (rez->num == NULL)
+	{
+		return -1;
+	}
+	rez->isNegativeBool = 0;
+	
+	if (a.len == 0 || b.len == 0)
+	{
+		return 0;
 	}
 	
 	if ((a.isNegativeBool || b.isNegativeBool) && !(a.isNegativeBool && b.isNegativeBool))
@@ -775,7 +901,11 @@ int longMul(verylong a, verylong b, verylong *rez)
 	if (aPowerOf10 || bPowerOf10)
 	{
 		rez->len = a.len + b.len - 1;
-		rez->num = malloc(rez->len);
+		rez->num = calloc(rez->len, 1);
+		if (rez->num == NULL)
+		{
+			return -1;
+		}
 		if (aPowerOf10 && bPowerOf10)
 		{
 			rez->num[0] = 1;
@@ -807,7 +937,6 @@ int longMul(verylong a, verylong b, verylong *rez)
  				rez->num[j - shift_count ] += a.num[j-b.len] * b.num[i];
  			if (j > 0)
 				rez->num[j-1] += rez->num[j]/10;
- 			//printf("eez minuz [%llu] = %d\n", j, rez->num[j-1]);
  			rez->num[j] %= 10;
  		}
  		shift_count++;
@@ -817,22 +946,36 @@ int longMul(verylong a, verylong b, verylong *rez)
 }
 int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
 {
-	if (b.len == 0)
+	if (a.len == 0 || a.num == NULL || b.len == 0 || b.num == NULL)
 	{
-		return 1;
+		return -2;	//bad params
+	}
+	if (b.len == 1 && b.num[0] == 0)
+	{
+		return 1;	//div by 0
 	}
 	
-	rem->len = 0;
-	rem->num = NULL;
+	quot->len = 1;
+	quot->num = calloc(1, 1);
+	if (quot->num == NULL)
+	{
+		return -1;
+	}
+	quot->isNegativeBool = 0;
+	
+	rem->len = 1;
+	rem->num = calloc(1, 1);
+	if (quot->num == NULL)
+	{
+		return -1;
+	}
+	rem->isNegativeBool = 0;
+	
 	rem->isNegativeBool = a.isNegativeBool;
 	if (a.len<b.len)
-	{
-		quot->len = 0;
-		quot->num = NULL;
-		quot->isNegativeBool = 0;
-		
+	{		
 		rem->len = a.len;
-		rem->num = malloc(rem->len);
+		rem->num = calloc(rem->len, 1);
 		if (rem->num == NULL)
 		{
 			return -1;
@@ -846,15 +989,33 @@ int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
 	if (verylongA_IS_A_POWER_OF_10(b))
 	{
 		rem->len = b.len - 1;
-		rem->num = malloc(rem->len);
-		if (rem->num == NULL)
+		quot->len = a.len - b.len + 1;
+		
+		if (rem->len == 0)
+		{
+			rem->len = 1;
+			rem->num = calloc(1, 1);
+			if (rem->num == NULL)
+			{
+				return -1;
+			}
+			rem->isNegativeBool = 0;
+		}
+		else
+		{
+			rem->num = calloc(rem->len, 1);
+			if (rem->num == NULL)
+			{
+				return -1;
+			}
+			memcpy(rem->num, a.num + quot->len, rem->len);
+		}
+		
+		quot->num = calloc(quot->len, 1);	//siuo atveju quot len visada bus >0
+		if (quot->num == NULL)
 		{
 			return -1;
 		}
-		
-		quot->len = a.len - b.len + 1;
-		memcpy(rem->num, a.num + quot->len, quot->len);
-		quot->num = malloc(quot->len);
 		memcpy(quot->num, a.num, quot->len);
 		
 		return 0;
@@ -868,7 +1029,7 @@ int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
 	}
 	
 	unsigned long long i;
-	verylong compare = {NULL, 0, 0};
+	verylong compare = {calloc(1, 1), 1, 0};
 	char doDouble, aNeg = a.isNegativeBool, bNeg = b.isNegativeBool;
 	a.isNegativeBool = b.isNegativeBool = 0;
 	for (i = 0; i<quot->len; i++)
@@ -925,8 +1086,7 @@ int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
 	{
 		return 2;
 	}
-	compare.isNegativeBool = compare.isNegativeBool ? 0 : 1;
-	if (longSum(a, compare, rem))
+	if (longDiff(a, compare, rem))
 	{
 		freeStruct(&compare);
 		return 2;
@@ -937,28 +1097,30 @@ int longDiv(verylong a, verylong b, verylong *quot, verylong *rem)
 }
 int longExp(verylong a, verylong b, verylong *exp)
 {
-	if (a.len == 0)
+	if (a.len == 0 || a.num == NULL || b.len == 0 || b.num == NULL)
 	{
-		exp->isNegativeBool = 0;
-		exp->len = 0;
-		exp->num = NULL;
-		return 0;
-	}
-	if (b.len == 0)
-	{
-		exp->isNegativeBool = 0;
-		exp->len = 1;
-		exp->num = malloc(1);
-		if (exp->num == NULL)
-		{
-			return -1;
-		}
-		exp->num[0] = 1;
-		return 0;
+		return -2;	//bad params
 	}
 	if (b.isNegativeBool == 1)
 	{
 		return 1;
+	}
+	exp->len = 1;
+	exp->num = calloc(1, 1);
+	if (exp->num == NULL)
+	{
+		freeStruct(exp);
+		return -1;
+	}
+	exp->isNegativeBool = 0;
+	if (a.len == 1 && a.num[0] == 0)
+	{
+		return 0;
+	}
+	if (b.len == 1 && b.num[0] == 0)
+	{
+		exp->num[0] = 1;
+		return 0;
 	}
 	
 	char *leakPlug;
@@ -967,13 +1129,6 @@ int longExp(verylong a, verylong b, verylong *exp)
 	{
 		if (a.len == 1)
 		{
-			exp->isNegativeBool = 0;
-			exp->len = 1;
-			exp->num = malloc(1);
-			if (exp->num == NULL)
-			{
-				return -1;
-			}
 			exp->num[0] = 1;
 			return 0;
 		}
@@ -989,7 +1144,7 @@ int longExp(verylong a, verylong b, verylong *exp)
 			{
 				free(leakPlug);
 			}
-			return -1;
+			return 4;
 		}
 		if (leakPlug != NULL)
 		{
@@ -1002,7 +1157,8 @@ int longExp(verylong a, verylong b, verylong *exp)
 		}
 		freeStruct(&testlimit);
 		++exp->len;
-		exp->num = malloc(exp->len);
+		
+		exp->num = calloc(exp->len, 1);
 		if (exp->num == NULL)
 		{
 			return -1;
@@ -1015,7 +1171,7 @@ int longExp(verylong a, verylong b, verylong *exp)
 		if (b.num[0] == 1)
 		{
 			exp->len = a.len;
-			exp->num = malloc(exp->len);
+			exp->num = calloc(exp->len, 1);
 			if (exp->num == NULL)
 			{
 				return -1;
@@ -1025,14 +1181,27 @@ int longExp(verylong a, verylong b, verylong *exp)
 		}
 		if (b.num[0] == 2)
 		{
-			longMul(a, a, exp);
+			if (longMul(a, a, exp))
+			{
+				return 4;
+			}
 			return 0;
 		}
 		if (b.num[0] == 3)
 		{
-			longMul(a, a, exp);
+			if (longMul(a, a, exp))
+			{
+				return 4;
+			}
 			leakPlug = exp->num;
-			longMul(*exp, a, exp);
+			if (longMul(*exp, a, exp))
+			{
+				if (leakPlug != NULL)
+				{
+					free(leakPlug);
+				}
+				return 4;
+			}
 			if (leakPlug != NULL)
 			{
 				free(leakPlug);
@@ -1047,15 +1216,9 @@ int longExp(verylong a, verylong b, verylong *exp)
 		return 3;
 	}
 	
-	exp->len = 1;
-	exp->num = malloc(1);	//paruosiamas exponentas nes rekursyviai is jo tik daugina ir jei nebutu inicijuota i 1 tai daygybos rezultatai butu keisti
-	if (exp->num == NULL)
-	{
-		return -1;
-	}
-	exp->num[0] = 1;
+	exp->num[0] = 1;	//paruosiamas exponentas nes rekursyviai is jo tik daugina ir jei nebutu inicijuota i 1 tai daygybos rezultatai butu keisti
 	
-	verylong powers = {malloc(a.len), a.len, 0};
+	verylong powers = {calloc(a.len, 1), a.len, 0};
 	if (powers.num == NULL)
 	{
 		return -1;
@@ -1065,7 +1228,7 @@ int longExp(verylong a, verylong b, verylong *exp)
 	if (recursivePowerOfTwoExponent(&powers, bInLLU, bInLLU, exp))
 	{
 		freeStruct(&powers);
-		return 3;
+		return 4;
 	}
 	freeStruct(&powers);
 	return 0;
@@ -1141,6 +1304,10 @@ int recursivePowerOfTwoExponent(verylong *powers, unsigned long long b, unsigned
 //{ other
 int removeLeadingZeros(verylong *a)
 {
+	if (a->len == 0 || a->num == NULL)
+	{
+		return -2;	//bad params
+	}
 	unsigned long long i, start = 0;
 	char notZeroLen = 0;
 	for (i = 0; i<a->len; i++)
@@ -1159,16 +1326,25 @@ int removeLeadingZeros(verylong *a)
 			a->num[i] = a->num[i+start];
 		}
 	}
-	a->len = notZeroLen ? a->len-start : 0;
+	a->len = notZeroLen ? a->len-start : 1;
 	a->num = realloc(a->num, a->len);
-	if (a->num==NULL && a->len!=0)
+	if (a->num==NULL)
 	{
 		return -1;
+	}
+	if (!notZeroLen)
+	{
+		a->isNegativeBool = 0;
+		a->num[0] = 0;
 	}
 	return 0;
 }
 int print_bcdh(FILE *output, verylong a)
 {	
+	if (a.len == 0 || a.num == NULL)
+	{
+		return -2;	//bad params
+	}
 	unsigned long long i;
 	if(a.isNegativeBool)
 	{
@@ -1193,6 +1369,10 @@ int print_bcdh(FILE *output, verylong a)
 }
 int castVerylongToULongLong(verylong a, unsigned long long *regular)
 {
+	if (a.len == 0 || a.num == NULL)
+	{
+		return -2;	//bad params
+	}
 	if (verylongA_CAN_BE_STORED_IN_ULongLong(a))
 	{
 		*regular = 0;
@@ -1214,8 +1394,8 @@ int castULongLongToVerylong(unsigned long long regular, verylong *a)
 	a->isNegativeBool = 0;
 	if (regular == 0)
 	{
-		a->len = 0;
-		a->num = NULL;
+		a->len = 1;
+		a->num = calloc(1, 1);
 		return 0;
 	}
 	char ULL_Len, i;
@@ -1228,7 +1408,7 @@ int castULongLongToVerylong(unsigned long long regular, verylong *a)
 		}
 	}
 	a->len = ULL_Len;
-	a->num = malloc(a->len);
+	a->num = calloc(a->len, 1);
 	if (a->num == NULL)
 	{
 		return -1;
